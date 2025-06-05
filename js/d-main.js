@@ -658,12 +658,29 @@ function availability_results (response, state) {
 	var found = response.search("Check Service Availability in Your Area");
 	if( found < 0 ) {
 
-		// done
+		// Internet plans found - close modal and scroll to plans section
 		jQuery("#plan-building-wizard-modal").modal("hide");
-		panel_plans.scrollIntoView();
+		
+		// Scroll to the internet plans section
+		var internetPlanSection = document.getElementById('internet-plan-section');
+		if (internetPlanSection) {
+			// Smooth scroll to the section
+			internetPlanSection.scrollIntoView({ 
+				behavior: 'smooth', 
+				block: 'start' 
+			});
+		} else {
+			// Fallback: try to scroll to the panel if the section doesn't exist
+			if (panel_plans) {
+				panel_plans.scrollIntoView({ 
+					behavior: 'smooth', 
+					block: 'start' 
+				});
+			}
+		}
 
 	} else {
-		// adderss not found
+		// address not found
 		if( state ==  0 ) {
 			// just show the response and thats it
 
