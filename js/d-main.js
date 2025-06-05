@@ -621,87 +621,83 @@ function checkAvailability() {
 	}	
 }
 
-function availability_results (response, state) {
-	
-	// This is for the signup plans
-	if( state == 100 ) {
+function availability_results(response, state) {
 
-		var panel_plans = document.getElementById("panel-showinternetplans");
-		if( panel_plans != undefined ) {
-			panel_plans.innerHTML = response;
-		}
+    // This is for the signup plans
+    if (state == 100) {
 
-		jQuery(".confirm_customer_details_button").attr("disabled",false);
-		jQuery(".confirm_customer_details_button").removeClass("checking");
-		jQuery(".confirm_customer_details_button").html("Confirm");
+        var panel_plans = document.getElementById("panel-showinternetplans");
+        if (panel_plans != undefined) {
+            panel_plans.innerHTML = response;
+        }
 
-		jQuery(".plan_check_other_availability_btn").hide();
+        jQuery(".confirm_customer_details_button").attr("disabled", false);
+        jQuery(".confirm_customer_details_button").removeClass("checking");
+        jQuery(".confirm_customer_details_button").html("Confirm");
 
-		var stateObj = { "step" : 2 , "dg_rand": dg_rand }
-		history_push_state(stateObj,"Installation","#stepdates");
+        jQuery(".plan_check_other_availability_btn").hide();
 
-		SignupWizardNextTap();
+        var stateObj = { "step": 2, "dg_rand": dg_rand }
+        history_push_state(stateObj, "Installation", "#stepdates");
 
-		return;
-	}
-	
-	
-	jQuery(".checkAvailabilityBtn").attr("disabled",false);
-	jQuery(".checkAvailabilityBtn").removeClass("checking");
-	jQuery(".checkAvailabilityBtn").html("Check Availability");
+        SignupWizardNextTap();
 
-	var panel_plans = document.getElementById("panel-showinternetplans");
-	if( panel_plans != undefined ) {
-		panel_plans.innerHTML = response;
-	}
-	
-	var found = response.search("Check Service Availability in Your Area");
-	if( found < 0 ) {
+        return;
+    }
 
-		// Internet plans found - close modal and scroll to plans section
-		jQuery("#plan-building-wizard-modal").modal("hide");
-		
-		// Scroll to the internet plans section
-		var internetPlanSection = document.getElementById('internet-plan-section');
-		if (internetPlanSection) {
-			// Smooth scroll to the section
-			internetPlanSection.scrollIntoView({ 
-				behavior: 'smooth', 
-				block: 'start' 
-			});
-		} else {
-			// Fallback: try to scroll to the panel if the section doesn't exist
-			if (panel_plans) {
-				panel_plans.scrollIntoView({ 
-					behavior: 'smooth', 
-					block: 'start' 
-				});
-			}
-		}
 
-	} else {
-		// address not found
-		if( state ==  0 ) {
-			// just show the response and thats it
+    jQuery(".checkAvailabilityBtn").attr("disabled", false);
+    jQuery(".checkAvailabilityBtn").removeClass("checking");
+    jQuery(".checkAvailabilityBtn").html("Check Availability");
 
-		} else if(state == 2 ) {
+    var panel_plans = document.getElementById("panel-showinternetplans");
+    if (panel_plans != undefined) {
+        panel_plans.innerHTML = response;
+    }
 
-			// go to next step in the availability check
-			jQuery(".checkAvailabilityBtn").html("Check Availability");
-		//	show_plans_check_availability();
-			jQuery(".internet-packages-check-availability-button").html("Check Availability");
-			goto_tab(2);
+    var found = response.search("Check Service Availability in Your Area");
+    if (found < 0) {
 
-		} else if( state == 1 ) {
+        // Internet plans found - close modal and scroll to plans section
+        jQuery("#plan-building-wizard-modal").modal("hide");
 
-			// send us an email
-			jQuery(".checkAvailabilityBtn").html("Check Availability");
-			if (modal_content_loaded) { goto_tab(1); }
-		}
-		
-	}
-	return;
+        // Wait for modal to close, then smooth scroll to the panel
+        setTimeout(function () {
+            var targetElement = jQuery('#panel-showinternetplans');
+            if (targetElement.length > 0) {
+                // jQuery smooth scroll with longer duration for smoother effect
+                jQuery('html, body').animate({
+                    scrollTop: targetElement.offset().top - 80 // 80px offset from top for better visibility
+                }, 1200, 'swing'); // 1.2 seconds duration with swing easing
+            }
+        }, 400); // Wait 400ms for modal closing animation to complete
+
+    } else {
+        // address not found
+        if (state == 0) {
+            // just show the response and thats it
+
+        } else if (state == 2) {
+
+            // go to next step in the availability check
+            jQuery(".checkAvailabilityBtn").html("Check Availability");
+            //	show_plans_check_availability();
+            jQuery(".internet-packages-check-availability-button").html("Check Availability");
+            goto_tab(2);
+
+        } else if (state == 1) {
+
+            // send us an email
+            jQuery(".checkAvailabilityBtn").html("Check Availability");
+            if (modal_content_loaded) { goto_tab(1); }
+        }
+
+    }
+    return;
 }
+
+
+
 
 function GetInternetPlansHtml(divname, action, ccd) {
 	jQuery.post(
