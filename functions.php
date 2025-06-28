@@ -1,5 +1,20 @@
 <?php 
 
+// Completely disable magnific_popup.css
+add_action('init', 'completely_disable_magnific_popup', 1);
+function completely_disable_magnific_popup() {
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    
+    // Block ALL magnific popup CSS requests site-wide
+    if (strpos($request_uri, 'magnific_popup.css') !== false) {
+        header('Content-Type: text/css');
+        header('Cache-Control: max-age=86400'); // Cache for 24 hours
+        echo '/* Magnific popup disabled site-wide */';
+        exit;
+    }
+}
+
+
 include_once("includes/crypt.php");
 include_once("includes/hubspot.php");
 include_once("includes/availability_check.php");
@@ -26,6 +41,7 @@ function fix_divi_special_characters($output, $tag, $attr, $m) {
     }
     return $output;
 }
+
 
 
 function verify_card_ex($payment_info) {
@@ -186,7 +202,7 @@ function SendInfoToSignupServer ( $state ) {
 
 	$payload = json_encode($d);
 
-	//error_log("Sending payload : $payload");
+	error_log("Sending to server payload : $payload");
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, "https://207.167.88.7/signup.php");
@@ -392,7 +408,7 @@ function ajax_find_address_signup( $ccd = false ) {
 add_action( 'wp_ajax_nopriv_find_address', 'ajax_find_address' );
 add_action( 'wp_ajax_find_address', 'ajax_find_address' );
 function ajax_find_address( $ccd = false ) {
-
+	
 	$ccd = "";
 
 	// getting the ccd parameters (referral to our website);
@@ -404,12 +420,13 @@ function ajax_find_address( $ccd = false ) {
 	}
 
 	error_log(" In ajax_find_address -> ppget_internet_plans $ccd ");
+	
 	$response = ppget_internet_plans(1,  $ccd);
-
+	
 	// commented out checking for email, to send the data anyways to the server for logging
 	//$user_data = dg_get_current_user_data();
 	//if( strlen( $user_data.email ) > 0 ) { 
-		AddressCheckLog( 0 );
+		//AddressCheckLog( 0 );
 	//}
 
 	wp_die($response);
@@ -436,8 +453,10 @@ function ppget_internet_plans($MainWebPage, $ccd) {
 	}
 
 	if( isset( $_POST['streetAddress'] ) == true ) { // this is a new search
-		error_log("This is a new address " .  $_POST['streetAddress']  );
+		//error_log("This is a new address " .  $_POST['streetAddress']  );
+
 		$apiResponse = find_address_availability_ex();
+
 	} else {
 		$apiResponse = dg_get_user_meta("_api_response");
 	}
@@ -700,9 +719,11 @@ function diallog_theme_enqueue_styles() {
 	  
 	  wp_enqueue_script( "jquery-mask", get_stylesheet_directory_uri() . '/js/jquery.mask.min.js', array("jquery"), "1.14.16", true );
 
-	  wp_enqueue_script( "diallog-main", get_stylesheet_directory_uri() . '/js/d-main.js', array("jquery"), "0.0.5", true );
-	  
-
+	  wp_enqueue_script( "diallog-main", get_stylesheet_directory_uri() . '/js/d-main.js', array("jquery"), "0.0.7", true );
+	
+	  //wp_enqueue_script( "google-maps-api2","//maps.googleapis.com/maps/api/js?key=AIzaSyCVLq3DrRD2BizXm-yZ-WsD2qq0ofWN2VU&libraries=places" , array(), "1.0", true );
+	  wp_enqueue_script( "google-maps-api2","//maps.googleapis.com/maps/api/js?key=AIzaSyAQ_uaqGJF-ALsSrkYEzKOHbI27WC-vEZg&libraries=places" , array(), "1.0", true );
+	  //wp_enqueue_script( "google-maps-api2","https://maps.googleapis.com/maps/api/js?key=AIzaSyB1IAKntR9qg34Q-4eANCMqNoNQ1UE8j1M&libraries=places" , array(), "1.0", true );
 	  wp_enqueue_script("jquery-ui","https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js",array("jquery"),"1.12.1",false);
 	  wp_enqueue_script("jquery-ui-datepicker");
 	  wp_enqueue_style('jquery-ui','https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/south-street/jquery-ui.css',false,'1.12.1',false);
@@ -812,6 +833,8 @@ function dg_get_internet_plans( $atts ) {
 
 add_shortcode("dg_signup_page","dg_signup_page");
 function dg_signup_page( $atts ) {
+
+//echo ("In dg_signup_page " . time() . "<br>"); //Eugene
 	
 	ob_start();
 	
@@ -879,10 +902,9 @@ function _add_product_tocart($plan_id, $type) {
 		dg_set_user_meta("selected_".$type."_plan_name",$product_data->get_title());
 
 		error_log(" Cart_item_id $product_id, Cart_ItemCategory $product_category, Cart_ItemTitle " . $product_data->get_title() );
-
-		dg_set_user_meta("cart_category_" . $product_id , $product_category);
+		
+        dg_set_user_meta("cart_category_" . $product_id , $product_category);
 		dg_set_user_meta("cart_title_" . $product_id , $product_data->get_title());
-
 		dg_set_user_meta("category_" . $product_category, $product_id);
 
 		if( strcmp( $product_category, "internet-plan" ) == 0 ) {
@@ -925,7 +947,7 @@ function dg_add_product_to_cart ($plan_id = false , $type =  false) {
 
 	}
 
-	error_log( " In dg_add_product_to_cart plan $plan_id, type $type " );
+	error_log( " 1- In dg_add_product_to_cart plan $plan_id, type $type " );
 
 	// Add Installation Fees
 	// 1. Check which Internet plan is selected
@@ -946,6 +968,8 @@ function dg_add_product_to_cart ($plan_id = false , $type =  false) {
 			goto finish;
 		}
 
+	error_log( " 2- In dg_add_product_to_cart plan $plan_id, type $type " );
+
 		// add the installation fees
 		$internet_plan_sku = $internet_plan_id->get_sku();
 		$internet_plan_sku_list = explode(",",$internet_plan_sku);
@@ -957,22 +981,30 @@ function dg_add_product_to_cart ($plan_id = false , $type =  false) {
 			'category' => "Fixed Fee",
 		) );
 
+	    error_log( " 3- In dg_add_product_to_cart plan $plan_id, type $type " );
+
 		$products = $query->get_products();
 		foreach($products as $prod) {
 			$install_plan_sku = $prod->get_sku();
 			$install_plan_sku_list = explode(",",$install_plan_sku);
 
+            error_log( "In dg_add_product_to_cart in the product loop, install plan sku = $install_plan_sku, $plan_id, type $type " );
+
 			foreach($install_plan_sku_list as $install_sku) {
-				foreach($internet_plan_sku_list as $internet_sku) {
-					if( strcmp( $internet_sku, $install_sku) == 0 ) {
+				//foreach($internet_plan_sku_list as $internet_sku) {
+					if( strcmp( $internet_plan_sku_list[0], $install_sku) == 0 ) {
 						// found match;
 						$plan_id = $prod->get_id();
-						$ret = _add_product_tocart($plan_id, $type);
+						$ret = _add_product_tocart($plan_id, "fixedfee");
 						goto finish;
 					}
-				}
+				//}
 			}
+
+
 		}
+
+	    error_log( " 4- In dg_add_product_to_cart plan $plan_id, type $type " );
 
 	}
 
@@ -981,8 +1013,11 @@ function dg_add_product_to_cart ($plan_id = false , $type =  false) {
 		$ret = _add_product_tocart($plan_id, $type);
 		error_log(" dg_add_product_to_cart return $ret ") ;
 	} 
+	    
 
 finish:
+
+    error_log( " 5- In dg_add_product_to_cart plan $plan_id, type $type " );
 
 	if ($ajax) {
 		die($ret);		
@@ -1176,7 +1211,7 @@ function dg_update_user_data () {
 		//if( strcmp( $user_data.lead_status, "Need manual check" ) == 0 ) {
 		//	SendInfoToSignupServer(0);
 		//} else {
-			SendInfoToSignupServer($state);
+			SendInfoToSignupServer($state); 
 		//}
 
 		$response["status"] = "success";
@@ -1640,200 +1675,176 @@ function ajax_show_pbw() {
 remove_action( 'woocommerce_checkout_order_review','woocommerce_checkout_payment',20);
 add_action( 'woocommerce_checkout_before_customer_details','woocommerce_checkout_payment',10);			 
 
-
+// Optimized by Eugene with help from ChatGPT
 function get_dg_user_id() {
-	
 	global $dg_user_id;
-	
-	if(isset($_COOKIE['dg_user_hash'])) {
-		
-		$user_id = $_COOKIE['dg_user_hash'];
-		
-	} elseif ($dg_user_id) {
-		
-		$user_id = $dg_user_id;
-	
+
+	if (isset($_COOKIE['dg_user_hash'])) {
+		$dg_user_id = $_COOKIE['dg_user_hash'];
+	} elseif (!empty($dg_user_id)) {
+		// already set
 	} else {
-		
-		$user_id = false;
+		$dg_user_id = false;
 	}
-	
-	return $user_id;
+
+	return $dg_user_id;
 }
 
-function set_dg_user_id ($id) {
-	
+function set_dg_user_id($id) {
 	global $dg_user_id;
 	$dg_user_id = $id;
-	setcookie("dg_user_hash", $dg_user_id, strtotime( '+30 days' ) ,"/");
-	
+	setcookie("dg_user_hash", $dg_user_id, strtotime('+30 days'), "/");
 }
 
-function dg_get_current_user_data () {
-	
-	global $wpdb;
-	
-	$user_data = [];
-	
-	if (is_user_logged_in()) {
-		
-		$user_id = get_current_user_id();
-		$user_info = get_userdata($user_id);
-		
-		$user_data['first_name'] = $user_info->first_name;
-		$user_data['last_name'] = $user_info->last_name;
-		$user_data['email'] = $user_info->user_email;
-		$user_data['date_created'] = date("j M,Y H:i:s",strtotime($user_info->user_registered));
-		
-		foreach (get_user_meta($user_id,"",true) as $key=>$value) {
-			
-			$user_data[$key] = maybe_unserialize($value[0]);	
-			
-		}
-		
-		
-	} elseif (get_dg_user_id()) {
-		
-		$dg_user_hash = get_dg_user_id();
-		
-		$data = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dg_user_data WHERE user_id ='$dg_user_hash' ", ARRAY_A);
-		
-		if ($data && is_array($data)) {
-			
-			foreach ($data as $row) {
-				
-				$user_data[$row['meta_key']] = maybe_unserialize($row['meta_value']);
-			}
-			 
-		} else {
-			
-			$user_data = false;
-		}
-			
-	} else {
-		
-		$user_data = false;
-		
-	}
-	
-	return $user_data;
-	
-} 
-
-
-function dg_set_current_user_data ($user_data) {
-	
-	
-	if (is_array($user_data))
-	foreach ($user_data as $key => $value) { 
-		dg_set_user_meta($key,$value);	
-	}
-	
-	
-}
-
-
-
-function dg_get_user_meta ($key) {
-	
-	global $wpdb;
-	global $dg_user_id;
-	
-	if (is_user_logged_in()) {
-		
-		$user_id = get_current_user_id();
-		$value = get_user_meta($user_id,$key,true); 		
-		
-	} elseif (get_dg_user_id()) {
-		
-		$dg_user_hash = get_dg_user_id();
-		
-		$data = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}dg_user_data WHERE user_id = '$dg_user_hash' AND meta_key='$key' ", ARRAY_A );
-		
-		if ($data!==null) {
-			$value = maybe_unserialize($data['meta_value']);	
-		} else {
-			$value = false;
-		}
-			
-	} else {
-		
-		$value = false;
-		
-	}
-	
-	return $value;
-	
-}
-
-function dg_set_user_meta ($key,$value = "") {
-	
+function dg_get_user_meta($key) {
 	global $wpdb;
 
-	/*
-	if ($key=="order_step" && is_numeric($value)) {
-			$value = update_order_step($value);
+	$user_id = get_dg_user_id();
+	if (!$user_id) return false;
+
+    $main_key = "full_user_data";
+	$data = $wpdb->get_row(
+		$wpdb->prepare(
+			"SELECT meta_value FROM {$wpdb->prefix}dg_user_data WHERE user_id = %s AND meta_key = %s",
+			$user_id, $main_key
+		),
+		ARRAY_A
+	);
+
+    if( $data )
+    {
+        $main_value_d = json_decode( base64_decode ( $data['meta_value'] ) , true );
+        if( isset( $main_value_d[$key] ) && $main_value_d[$key] ) {
+            return maybe_unserialize( base64_decode( $main_value_d[$key] ) );
+        }
+    }
+    
+	return false;//$data ? maybe_unserialize($data['meta_value']) : false;
+}
+
+function dg_set_user_meta($key, $value = "") {
+	global $wpdb;
+
+	$user_id = get_dg_user_id();
+	if (!$user_id) {
+		$user_id = md5(microtime(true) . rand());
+		set_dg_user_id($user_id);
+		dg_set_user_meta("date_created", date("j M,Y H:i:s"));
 	}
-	*/
 
-	if (is_user_logged_in()) {
-		
-		$user_id = get_current_user_id();
-		update_user_meta($user_id,$key,$value);	
-		
+    $existing = true;
+    $user_data = dg_get_current_user_data(true);//dg_get_user_meta($key);
+    if( $user_data == false )
+        $existing = false;
+    
+
+    $value = base64_encode( maybe_serialize( $value ) );
+    $main_key = "full_user_data";
+
+
+	if ($existing !== false) {
+        $main_value_d = dg_get_current_user_data(true);
+        $main_value_d[$key] = $value;
+        $main_value = base64_encode( json_encode( $main_value_d ));
+
+		return $wpdb->update(
+			$wpdb->prefix . "dg_user_data",
+			['meta_value' => $main_value],
+			['user_id' => $user_id, 'meta_key' => $main_key],
+			['%s'], ['%s', '%s']
+		);
+
 	} else {
-	
-		if (get_dg_user_id()) {
-			
-			$dg_user_hash = get_dg_user_id();
-			
-		} else {
-			
-			$dg_user_hash = md5(strtotime("now").rand(999999,10000000));
-			set_dg_user_id ( $dg_user_hash );
-			dg_set_user_meta("date_created",date("j M,Y H:i:s"));
+		$main_value_d = [];
+        $main_value_d[$key] = $value;
+        $main_value = base64_encode( json_encode( $main_value_d ));
 
-		}
-		
-		//update
-		if (dg_get_user_meta($key)!==false) {
-			
-			$insert = $wpdb->update( 
-				$wpdb->prefix."dg_user_data", 
-				array( 
-					'meta_value' => maybe_serialize($value),	// string
-				), 
-				array( 'user_id' => $dg_user_hash, 
-					   'meta_key' => $key
-					 ), 
-				array( 
-					'%s'
-				), 
-				array( '%s' , '%s') 
-			);
-		
-		//insert	
-		} else {
-
-			//insert 
-			$insert = $wpdb->insert( 
-				$wpdb->prefix."dg_user_data", 
-				array( 
-					'user_id' => $dg_user_hash, 
-					'meta_key' => $key,
-					'meta_value' => maybe_serialize($value), 
-				), 
-				array( 
-					'%s', 
-					'%s',
-					'%s' 
-				) 
-			);
-			
-			return $insert_id;
-		}
+		return $wpdb->insert(
+			$wpdb->prefix . "dg_user_data",
+			[
+				'user_id'    => $user_id,
+				'meta_key'   => $main_key,
+				'meta_value' => $main_value,
+			],
+			['%s', '%s', '%s']
+		);
 	}
 }
+
+function dg_get_current_user_data($unserialized = false) {
+	global $wpdb;
+
+	$user_id = get_dg_user_id();
+	if (!$user_id) return false;
+
+    $main_key = "full_user_data";
+	$data = $wpdb->get_row(
+		$wpdb->prepare(
+			"SELECT meta_value FROM {$wpdb->prefix}dg_user_data WHERE user_id = %s AND meta_key = %s",
+			$user_id, $main_key
+		),
+		ARRAY_A
+	);
+
+	if (!$data || isset( $data['meta_value']) == false ) return false;
+
+    $user_data = json_decode( base64_decode( $data['meta_value'] ), true );
+    if( $unserialized == false ) {
+        $ret_data = [];
+
+        foreach( $user_data as $key => $value ) { // decode all items
+            $ret_data[ $key ] = maybe_unserialize ( base64_decode( $value ) );
+        }
+
+        return $ret_data;
+    } else {
+        return $user_data;
+    }
+
+	return false;    
+}
+
+function dg_set_current_user_data($user_data) {
+	if (!is_array($user_data)) return;
+
+    $user_id = get_dg_user_id();
+	if (!$user_id) return false;
+
+    $existing = true;
+    $current_data = dg_get_current_user_data(true);
+    if( $current_data == false ) {
+        $existing = false;
+        $current_data = [];
+    }
+
+    foreach ($user_data as $key => $value) {
+        $current_data[$key] = base64_encode ( maybe_serialize( $value ));
+	}
+
+    $main_value = base64_encode( json_encode( $data ));
+    $main_key = "full_user_data";
+
+    if ($existing !== false) {
+		return $wpdb->update(
+			$wpdb->prefix . "dg_user_data",
+			['meta_value' => $main_value],
+			['user_id' => $user_id, 'meta_key' => $main_key],
+			['%s'], ['%s', '%s']
+		);
+	} else {
+		return $wpdb->insert(
+			$wpdb->prefix . "dg_user_data",
+			[
+				'user_id'    => $user_id,
+				'meta_key'   => $main_key,
+				'meta_value' => $main_value,
+			],
+			['%s', '%s', '%s']
+		);
+	}
+
+}
+// End optimized by Eugene with help from ChatGPT
 
 function GetTaxRate() {
 	$user_data = dg_get_current_user_data();
@@ -1842,8 +1853,6 @@ function GetTaxRate() {
 	}
 
 	$prov = $user_data['prov'];
-	error_log( "GetTax Rate for prov $prov ");
-
         $tax_rate = 13;
         if( strcasecmp( $prov, "BC") == 0 ) {
                 $tax_rate = 12;
@@ -2051,6 +2060,8 @@ function get_upfront_fee_summary() {
 			error_log( "...." . $product_category );
 			//TODO: in an effort to remove the 1st month internet payment from the inital payment
 			if( $product_category == "internet-plan" ) {
+				$summary[$product_category][0] = $_product->get_title();
+				$summary[$product_category][1] = 0.00; //Eugene explicitly exclude cost, show the plan name though
 				continue;
 			}
 
@@ -2131,6 +2142,8 @@ function get_upfront_order_summary($order) {
 
 			//TODO: in an effort to remove the 1st month internet payment from the inital payment
 			if( $product_category == "internet-plan" ) {
+				$summary[$product_category][0] = $_product->get_title();
+				$summary[$product_category][1] = 0.00; // Eugene explicitly exclude cost, show plan name
 				continue;
 			}
 
@@ -2236,7 +2249,7 @@ function GetModemsInfo(&$plan_name, &$fees, &$class_name, &$upfront_info ) {
 		$plan_name = apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) . '&nbsp;' . wc_get_formatted_cart_item_data( $cart_item );
 		
 		$ProdPrice = $_product->get_price();
-		$fees = $ProdPrice;
+		$fees = "$" . number_format($ProdPrice, 2) . "/mo";
 	
 		if( $_product->get_attribute( "Security Deposit" ) > 0 ) {
 			$sec_depoist = $_product->get_attribute( "Security Deposit" );
@@ -2254,6 +2267,7 @@ function GetModemsInfo(&$plan_name, &$fees, &$class_name, &$upfront_info ) {
 	return false;
 }
 
+//Eugene updated to correctly show the promo price and regular price plus Free 3 months on the Email and Thank You page summaries
 function GetPhoneInfo(&$plan_name, &$fees, &$class_name) {
 	foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
 			
@@ -2273,14 +2287,24 @@ function GetPhoneInfo(&$plan_name, &$fees, &$class_name) {
 		
 		$class_name = esc_attr( apply_filters( 'woocommerce_cart_item_class', 'cart_item', $cart_item, $cart_item_key ) );
 		$plan_name = apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) . '&nbsp;' . wc_get_formatted_cart_item_data( $cart_item );
-		
+
 		$ProdQuant = $cart_item['quantity'];
-		$ProdPrice = $_product->get_price();
+		$regular = round($_product->get_regular_price() * $ProdQuant, 2);
+		$sale = round($_product->get_sale_price() * $ProdQuant, 2);
 		$freq = $_product->get_attribute("Payment Frequency");
-		if( strlen($freq) > 0) {
-			$fees = $ProdPrice . " " . $freq ;
+		$fees = "";
+
+		// Eugene updated to show proper pricing for Phone section of Email and Thank You summaries
+		if ($regular > 0 && $sale == 0) {
+			$fees = "<s>$$regular/mo</s> Free for 3 months";
+		} elseif ($sale > 0 && $sale < $regular) {
+			$fees = "<s>$$regular/mo</s> $$sale/mo";
 		} else {
-			$fees = $ProdPrice;
+			$fees = "$" . round($_product->get_price() * $ProdQuant, 2) . "/mo";
+		}
+
+		if (strlen($freq) > 0 && strpos($fees, $freq) === false) {
+			$fees .= " " . $freq;
 		}
 
 		return true;
@@ -2329,7 +2353,7 @@ function GetInternetPlanInfo( &$plan_name, &$fees, &$class_name  ) {
 
 		$freq = $_product->get_attribute("Payment Frequency");
 		if( strlen($freq) > 0) {
-			$fees .= $freq ;
+			$fees .= " " . $freq;
 		}
 
 		return true;
@@ -2537,53 +2561,29 @@ function custom_override_checkout_fields( $fields ) {
     return $fields;
 }
 
-
-add_action( 'woocommerce_checkout_update_order_meta', 'saving_checkout_cf_data');
-function saving_checkout_cf_data( $order_id ) {
-	
-	//add checkout data to order meta
-    if(isset($_POST['checkout']) && is_array($_POST['checkout'])) {
-	    
+// Optimized by Eugene with ChatGPT help to update logic that was trying to encrypt with WordPress ID. Remove is_user_logged_in() check and always use get_dg_user_id()
+add_action('woocommerce_checkout_update_order_meta', 'saving_checkout_cf_data');
+function saving_checkout_cf_data($order_id) {
+	if (isset($_POST['checkout']) && is_array($_POST['checkout'])) {
 		SendInfoToSignupServer(50);
 
-	    foreach ($_POST['checkout'] as $key => $value) {
+		foreach ($_POST['checkout'] as $key => $value) {
+			if ($key == "monthly_cc" || $key == "monthly_bank") {
+				$token = maybe_serialize($value);
+				$encryption_key = get_dg_user_id(); // Always use cookie ID
+				$cryptor = new Cryptor($encryption_key);
+				$value = $cryptor->encrypt($token);
+				unset($token);
+				update_post_meta($order_id, "dg_user_hash", $encryption_key);
+			}
 
-
-		    if ($key=="monthly_cc" || $key=="monthly_bank") {
-			    
-			    
-			      $token = maybe_serialize($value);
-			      
-			      if (is_user_logged_in()) {
-				      $encryption_key = md5(get_dg_user_id());
-			      } else {
-				      $encryption_key = get_dg_user_id();
-			      }
-				
-				  $cryptor = new Cryptor($encryption_key);
-				  $value = $cryptor->encrypt($token);
-				  unset($token);
-				  update_post_meta( $order_id, "dg_user_hash", $encryption_key );
-			    
-		    }
-		    
-		    
-		    if (!is_array($value)) {
-			    update_post_meta( $order_id, $key, sanitize_text_field( $value ) );
-		    } else {
-			    update_post_meta( $order_id, $key, maybe_serialize($value) );
-		    }
-		    
-	    }
-    }
-    
-    //add billing fields to user meta
-    if (is_user_logged_in()) {
-		
-			    
-	    
-    }
-     
+			if (!is_array($value)) {
+				update_post_meta($order_id, $key, sanitize_text_field($value));
+			} else {
+				update_post_meta($order_id, $key, maybe_serialize($value));
+			}
+		}
+	}
 }
 
 add_action( 'woocommerce_order_status_on-hold', 'dg_on_order_processing');
@@ -2700,3 +2700,11 @@ function wporg_payment_box_html($post)
 function Cleanup_Number($val) {
 	return preg_replace('/[^0-9]/', '', $val);
 }
+
+// Eugene define shortcode to render order summary, which will be used on thank-you page
+function dg_order_summary_shortcode() {
+    $summary = dg_get_user_meta("order_summary_html");
+    if (!$summary) return "<p>We couldn’t find your order details. Please contact support.</p>";
+    return $summary;
+}
+add_shortcode('dg_order_summary', 'dg_order_summary_shortcode');
